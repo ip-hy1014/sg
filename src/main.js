@@ -123,13 +123,13 @@ function header(view) {
     ['/weak', '弱点']
   ];
   return `
-    <header>
-      <a class="brand" href="#/">SG学習</a>
-    </header>
     <div class="navwrap">
-      <nav>
-        ${tabs.map(([p, n]) => `<a class="${view === p ? 'active' : ''}" href="#${p}" ${view === p ? 'data-totop' : ''}>${n}</a>`).join('')}
-      </nav>
+      <div class="navinner">
+        <a class="brand" href="#/">SG</a>
+        <nav>
+          ${tabs.map(([p, n]) => `<a class="${view === p ? 'active' : ''}" href="#${p}" ${view === p ? 'data-totop' : ''}>${n}</a>`).join('')}
+        </nav>
+      </div>
     </div>
   `;
 }
@@ -162,11 +162,11 @@ function homePage() {
         <a class="btn" href="${playHash({ area: '', find: '', mode: 'wrong' })}">間違えた問題を解く</a>
         <a class="btn" href="#/guide">論点を読む</a>
       </p>
-      <table>
+      <div class="tablewrap"><table>
         <caption>分野別</caption>
         <thead><tr><th>分野</th><th class="num">問題数</th><th class="num">解答済</th><th class="num">正答率</th></tr></thead>
         <tbody>${rows}</tbody>
-      </table>
+      </table></div>
       <p class="note">分野名を押すと、その分野だけを出題します。</p>
       <p class="note"><button class="link" data-reset>解答の記録を消す</button></p>
     </main>`;
@@ -256,11 +256,13 @@ function guidePage() {
     .replace(/<\/main>[\s\S]*/, '')
     // 文書内リンクはハッシュを書き換えずにスクロールさせる。
     // そのままだとルーターが反応して別の画面に飛ぶ。
-    .replace(/href="#([^"\/][^"]*)"/g, 'data-jump="$1" href="#/guide"');
+    .replace(/href="#([^"\/][^"]*)"/g, 'data-jump="$1" href="#/guide"')
+    // 表が画面幅を超えてページ全体を押し広げないよう、箱に入れて横スクロールさせる
+    .replace(/<table>/g, '<div class="tablewrap"><table>')
+    .replace(/<\/table>/g, '</table></div>');
   return `${header('/guide')}
     <main class="guide">
       ${inner || '<p class="empty">論点が読み込めませんでした。</p>'}
-      <p class="actions"><button class="btn" data-top>先頭へ戻る</button></p>
     </main>`;
 }
 
@@ -334,9 +336,9 @@ function weakPage() {
   return `${header('/weak')}
     <main>
       <h1>弱点</h1>
-      ${rows ? `<table><caption>分野別の正誤</caption>
+      ${rows ? `<div class="tablewrap"><table><caption>分野別の正誤</caption>
         <thead><tr><th>分野</th><th class="num">正</th><th class="num">誤</th><th class="num">正答率</th></tr></thead>
-        <tbody>${rows}</tbody></table>` : ''}
+        <tbody>${rows}</tbody></table></div>` : ''}
       ${wrong.length
         ? `<p class="lead">直近の解答で間違えたままの${wrong.length}問です。<a href="${playHash({ area: '', find: '', mode: 'wrong' })}">まとめて解く</a></p>${blocks}`
         : '<p class="empty">間違えたまま残っている問題はありません。</p>'}
@@ -352,12 +354,13 @@ function route() {
 function mount() {
   const path = route();
   const app = document.getElementById('app');
-  app.innerHTML =
+  const page =
       path === '/play' ? playPage()
     : path === '/guide' ? guidePage()
     : path === '/terms' ? termsPage()
     : path === '/weak' ? weakPage()
     : homePage();
+  app.innerHTML = page + '<button class="totop" data-top title="先頭へ戻る" aria-label="先頭へ戻る">↑</button>';
   bind(path);
   window.scrollTo(0, 0);
 }
