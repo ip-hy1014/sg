@@ -59,10 +59,10 @@ function loadUrl(url) {
 async function unlock(password) {
   const text = await decrypt(password, window.SG_VAULT);
   const parts = JSON.parse(text);
-  const scripts = parts.slice(0, 3);
-  window.SG_GUIDE = parts[3] || '';
+  const scripts = parts.slice(0, -1);
+  window.SG_GUIDE = parts[parts.length - 1] || '';
   for (const code of scripts) await loadCode(code);
-  await loadUrl('src/main.js?v=2');
+  await loadUrl('src/main.js?v=3');
   localStorage.setItem(PASS_KEY, password);
   document.getElementById('gate').hidden = true;
 }

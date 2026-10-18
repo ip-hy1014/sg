@@ -119,15 +119,18 @@ function header(view) {
     ['/', 'ホーム'],
     ['/play', '問題'],
     ['/guide', '論点'],
+    ['/terms', '用語'],
     ['/weak', '弱点']
   ];
   return `
     <header>
       <a class="brand" href="#/">SG学習</a>
     </header>
-    <nav>
-      ${tabs.map(([p, n]) => `<a class="${view === p ? 'active' : ''}" href="#${p}">${n}</a>`).join('')}
-    </nav>
+    <div class="navwrap">
+      <nav>
+        ${tabs.map(([p, n]) => `<a class="${view === p ? 'active' : ''}" href="#${p}" ${view === p ? 'data-totop' : ''}>${n}</a>`).join('')}
+      </nav>
+    </div>
   `;
 }
 
@@ -261,6 +264,51 @@ function guidePage() {
     </main>`;
 }
 
+function termsPage() {
+  const list = (typeof GLOSSARY !== 'undefined' && GLOSSARY) || [];
+  if (!list.length) {
+    return `${header('/terms')}<main><p class="empty">用語集が読み込めませんでした。</p></main>`;
+  }
+  const p = params();
+  const word = (p.get('q') || '').trim();
+  const group = p.get('g') || '';
+  const groups = [];
+  list.forEach(x => { if (!groups.includes(x.a)) groups.push(x.a); });
+
+  let shown = list;
+  if (group) shown = shown.filter(x => x.a === group);
+  if (word) shown = shown.filter(x => (x.t + x.d + (x.n || '')).includes(word));
+
+  const chip = (v, label, key) => {
+    const q = new URLSearchParams(p.toString());
+    if (v) q.set(key, v); else q.delete(key);
+    const qs = q.toString();
+    return `<a class="chip ${(p.get(key) || '') === v ? 'on' : ''}" href="#/terms${qs ? '?' + qs : ''}">${esc(label)}</a>`;
+  };
+
+  const items = shown.map(x => `
+    <div class="term" id="t-${encodeURIComponent(x.t)}">
+      <dt>${esc(x.t)}<span class="tag">${esc(x.a)}</span></dt>
+      <dd>${esc(x.d)}${x.n ? `<em>${esc(x.n)}</em>` : ''}</dd>
+    </div>`).join('');
+
+  return `${header('/terms')}
+    <main>
+      <h1>用語集</h1>
+      <p class="lead">論点と問題に出てくる用語を集めています。全${list.length}語。</p>
+      <div class="filters">
+        <div class="chips">${[chip('', 'すべて', 'g')].concat(groups.map(g => chip(g, g, 'g'))).join('')}</div>
+        <form class="findbar" id="termform">
+          <input id="termword" type="search" placeholder="用語を探す" value="${esc(word)}"/>
+          <button type="submit">探す</button>
+          ${word ? `<a class="link" href="#/terms${group ? '?g=' + encodeURIComponent(group) : ''}">解除</a>` : ''}
+        </form>
+      </div>
+      <p class="count">${shown.length} 語</p>
+      <dl class="terms">${items || '<p class="empty">該当する用語がありません。</p>'}</dl>
+    </main>`;
+}
+
 function weakPage() {
   const wrong = wrongQuestions();
   const byArea = {};
@@ -307,6 +355,7 @@ function mount() {
   app.innerHTML =
       path === '/play' ? playPage()
     : path === '/guide' ? guidePage()
+    : path === '/terms' ? termsPage()
     : path === '/weak' ? weakPage()
     : homePage();
   bind(path);
@@ -364,6 +413,24 @@ function bind(path) {
 
   const top = app.querySelector('[data-top]');
   if (top) top.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+
+  app.querySelectorAll('[data-totop]').forEach(a => {
+    a.addEventListener('click', (e) => {
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  });
+
+  const tform = app.querySelector('#termform');
+  if (tform) tform.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const w = app.querySelector('#termword').value.trim();
+    const q = params();
+    if (w) q.set('q', w); else q.delete('q');
+    const qs = q.toString();
+    location.hash = '#/terms' + (qs ? '?' + qs : '');
+    if (route() === '/terms') mount();
+  });
 
   const reset = app.querySelector('[data-reset]');
   if (reset) reset.addEventListener('click', () => {
