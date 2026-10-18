@@ -1,0 +1,9 @@
+.DS_Store
+work/
+outputs/
+*.xlsx
+*.csv
+src/questions.js
+src/questions-b.js
+src/questions-extra.js
+論点.html
