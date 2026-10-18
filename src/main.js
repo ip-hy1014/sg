@@ -248,10 +248,16 @@ function playPage() {
 
 function guidePage() {
   const html = window.SG_GUIDE || '';
-  const inner = html.replace(/[\s\S]*?<main>/, '').replace(/<\/main>[\s\S]*/, '');
+  const inner = html
+    .replace(/[\s\S]*?<main>/, '')
+    .replace(/<\/main>[\s\S]*/, '')
+    // 文書内リンクはハッシュを書き換えずにスクロールさせる。
+    // そのままだとルーターが反応して別の画面に飛ぶ。
+    .replace(/href="#([^"\/][^"]*)"/g, 'data-jump="$1" href="#/guide"');
   return `${header('/guide')}
     <main class="guide">
       ${inner || '<p class="empty">論点が読み込めませんでした。</p>'}
+      <p class="actions"><button class="btn" data-top>先頭へ戻る</button></p>
     </main>`;
 }
 
@@ -347,6 +353,17 @@ function bind(path) {
     location.hash = playHash({ find: word });
     if (path === '/play') mount();
   });
+
+  app.querySelectorAll('[data-jump]').forEach(a => {
+    a.addEventListener('click', (e) => {
+      e.preventDefault();
+      const target = document.getElementById(a.dataset.jump);
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+
+  const top = app.querySelector('[data-top]');
+  if (top) top.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
 
   const reset = app.querySelector('[data-reset]');
   if (reset) reset.addEventListener('click', () => {
