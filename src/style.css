@@ -155,7 +155,7 @@ td.bad { color: var(--accent); font-weight: 700; }
 .chip.on { background: var(--ink); color: #fff; font-weight: 700; }
 
 .findbar { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-.findbar input { flex: 1 1 180px; min-width: 0; padding: 7px 10px; border: 1px solid var(--line); font: inherit; background: #fff; color: var(--ink); }
+.findbar input { flex: 1 1 180px; min-width: 0; max-width: 420px; padding: 8px 10px; border: 1px solid var(--line); font: inherit; background: #fff; color: var(--ink); }
 .findbar button { padding: 7px 14px; border: 1px solid var(--line); background: #fff; font: inherit; cursor: pointer; }
 
 .card { border: 1px solid var(--line); padding: 16px; }
@@ -236,6 +236,7 @@ td.bad { color: var(--accent); font-weight: 700; }
 
 .terms { margin: 0; padding: 0; }
 .term { border: 1px solid var(--line); padding: 10px 12px; margin: 0 0 8px; }
+.term[hidden] { display: none; }
 .terms dt { font-weight: 700; margin: 0 0 4px; }
 .terms dd { margin: 0; }
 .terms .tag { margin-left: 8px; font-size: 12px; font-weight: 400; color: var(--muted); border: 1px solid var(--muted); padding: 1px 6px; }

@@ -78,7 +78,7 @@ function pool() {
   const mode = activeMode();
   let list = QUESTIONS;
   if (area) list = list.filter(q => q.area === area);
-  if (word) list = list.filter(q => (String(q.tag || '') + String(q.q || '')).includes(word));
+  if (word) { const ts = tokens(word); if (ts.length) list = list.filter(q => matchAll(norm(String(q.tag || '') + String(q.q || '')), ts)); }
   if (mode === 'wrong') list = list.filter(q => { const r = resultOf(q.id); return r && r.lastOk === false; });
   if (mode === 'new') list = list.filter(q => !resultOf(q.id));
   return list;
@@ -109,6 +109,24 @@ function pickNext() {
 }
 
 // ---------- 画面 ----------
+
+// 検索の表記ゆれを吸収する。大小文字、全角半角、カタカナひらがな、区切り記号。
+// 空白で区切った語を全部含むものだけを拾う
+function tokens(q) {
+  return String(q || '').trim().split(/[\s\u3000]+/).map(norm).filter(Boolean);
+}
+
+function matchAll(hay, ts) {
+  return ts.every(t => hay.includes(t));
+}
+
+function norm(s) {
+  return String(s || '')
+    .replace(/[\uff01-\uff5e]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xfee0))
+    .replace(/[\u30a1-\u30f6]/g, c => String.fromCharCode(c.charCodeAt(0) - 0x60))
+    .replace(/[\s\u3000・･‐‑‒–—―ー\-_/]/g, '')
+    .toLowerCase();
+}
 
 function esc(s) {
   return String(s).replace(/&(?![a-zA-Z#0-9]+;)/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -277,9 +295,7 @@ function termsPage() {
   const groups = [];
   list.forEach(x => { if (!groups.includes(x.a)) groups.push(x.a); });
 
-  let shown = list;
-  if (group) shown = shown.filter(x => x.a === group);
-  if (word) shown = shown.filter(x => (x.t + x.d + (x.n || '')).includes(word));
+  const inGroup = group ? list.filter(x => x.a === group) : list;
 
   const chip = (v, label, key) => {
     const q = new URLSearchParams(p.toString());
@@ -288,8 +304,9 @@ function termsPage() {
     return `<a class="chip ${(p.get(key) || '') === v ? 'on' : ''}" href="#/terms${qs ? '?' + qs : ''}">${esc(label)}</a>`;
   };
 
-  const items = shown.map(x => `
-    <div class="term" id="t-${encodeURIComponent(x.t)}">
+  // 全件を描画しておき、入力に応じて表示を切り替える。再描画しないので入力欄の焦点が外れない。
+  const items = inGroup.map(x => `
+    <div class="term" data-s="${esc(norm(x.t + x.d + (x.n || '')))}">
       <dt>${esc(x.t)}<span class="tag">${esc(x.a)}</span></dt>
       <dd>${esc(x.d)}${x.n ? `<em>${esc(x.n)}</em>` : ''}</dd>
     </div>`).join('');
@@ -300,14 +317,14 @@ function termsPage() {
       <p class="lead">論点と問題に出てくる用語を集めています。全${list.length}語。</p>
       <div class="filters">
         <div class="chips">${[chip('', 'すべて', 'g')].concat(groups.map(g => chip(g, g, 'g'))).join('')}</div>
-        <form class="findbar" id="termform">
-          <input id="termword" type="search" placeholder="用語を探す" value="${esc(word)}"/>
-          <button type="submit">探す</button>
-          ${word ? `<a class="link" href="#/terms${group ? '?g=' + encodeURIComponent(group) : ''}">解除</a>` : ''}
-        </form>
+        <div class="findbar">
+          <input id="termword" type="search" placeholder="用語を探す（打つたびに絞ります）" value="${esc(word)}" autocomplete="off" autocapitalize="off" spellcheck="false"/>
+          <button type="button" id="termclear" class="link" ${word ? '' : 'hidden'}>消す</button>
+        </div>
       </div>
-      <p class="count">${shown.length} 語</p>
-      <dl class="terms">${items || '<p class="empty">該当する用語がありません。</p>'}</dl>
+      <p class="count"><span id="termcount">${inGroup.length}</span> 語</p>
+      <dl class="terms">${items}</dl>
+      <p class="empty" id="termempty" hidden>該当する用語がありません。</p>
     </main>`;
 }
 
@@ -424,16 +441,33 @@ function bind(path) {
     });
   });
 
-  const tform = app.querySelector('#termform');
-  if (tform) tform.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const w = app.querySelector('#termword').value.trim();
-    const q = params();
-    if (w) q.set('q', w); else q.delete('q');
-    const qs = q.toString();
-    location.hash = '#/terms' + (qs ? '?' + qs : '');
-    if (route() === '/terms') mount();
-  });
+  const tinput = app.querySelector('#termword');
+  if (tinput) {
+    const nodes = Array.from(app.querySelectorAll('.term'));
+    const countEl = app.querySelector('#termcount');
+    const emptyEl = app.querySelector('#termempty');
+    const clearBtn = app.querySelector('#termclear');
+    const apply = () => {
+      const ts = tokens(tinput.value);
+      let hit = 0;
+      nodes.forEach(n => {
+        const ok = !ts.length || matchAll(n.dataset.s, ts);
+        n.hidden = !ok;
+        if (ok) hit += 1;
+      });
+      if (countEl) countEl.textContent = String(hit);
+      if (emptyEl) emptyEl.hidden = hit !== 0;
+      if (clearBtn) clearBtn.hidden = !tinput.value;
+      // 再読み込みしても同じ状態に戻るよう、画面を描き直さずにURLだけ更新する
+      const q = params();
+      if (tinput.value) q.set('q', tinput.value); else q.delete('q');
+      const qs = q.toString();
+      history.replaceState(null, '', '#/terms' + (qs ? '?' + qs : ''));
+    };
+    tinput.addEventListener('input', apply);
+    if (clearBtn) clearBtn.addEventListener('click', () => { tinput.value = ''; apply(); tinput.focus(); });
+    if (tinput.value) apply();
+  }
 
   const reset = app.querySelector('[data-reset]');
   if (reset) reset.addEventListener('click', () => {
