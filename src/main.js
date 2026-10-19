@@ -306,8 +306,9 @@ function termsPage() {
 
   // 全件を描画しておき、入力に応じて表示を切り替える。再描画しないので入力欄の焦点が外れない。
   const items = inGroup.map(x => `
-    <div class="term" data-s="${esc(norm(x.t + x.d + (x.n || '')))}">
+    <div class="term" data-s="${esc(norm(x.t + (x.f || '') + x.d + (x.n || '')))}">
       <dt>${esc(x.t)}<span class="tag">${esc(x.a)}</span></dt>
+      ${x.f ? `<p class="full">${esc(x.f)}</p>` : ''}
       <dd>${esc(x.d)}${x.n ? `<em>${esc(x.n)}</em>` : ''}</dd>
     </div>`).join('');
 

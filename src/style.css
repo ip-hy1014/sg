@@ -264,3 +264,4 @@ td.bad { color: var(--accent); font-weight: 700; }
 @supports (padding: env(safe-area-inset-bottom)) {
   .totop { bottom: calc(18px + env(safe-area-inset-bottom)); }
 }
+.terms .full { margin: 0 0 4px; font-size: 13px; color: var(--muted); }
