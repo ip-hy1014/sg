@@ -318,7 +318,7 @@ function termsPage() {
       <div class="filters">
         <div class="chips">${[chip('', 'すべて', 'g')].concat(groups.map(g => chip(g, g, 'g'))).join('')}</div>
         <div class="findbar">
-          <input id="termword" type="search" placeholder="用語を探す（打つたびに絞ります）" value="${esc(word)}" autocomplete="off" autocapitalize="off" spellcheck="false"/>
+          <input id="termword" type="search" placeholder="用語を探す" value="${esc(word)}" autocomplete="off" autocapitalize="off" spellcheck="false"/>
           <button type="button" id="termclear" class="link" ${word ? '' : 'hidden'}>消す</button>
         </div>
       </div>
