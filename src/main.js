@@ -152,6 +152,15 @@ function header(view) {
   `;
 }
 
+function daysLeft() {
+  if (typeof EXAM === 'undefined' || !EXAM.date) return null;
+  const [y, m, d] = EXAM.date.split('-').map(Number);
+  const exam = new Date(y, m - 1, d);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.round((exam - today) / 86400000);
+}
+
 function homePage() {
   const rows = areaList().map(a => {
     const s = areaStats(a);
@@ -174,6 +183,12 @@ function homePage() {
   return `${header('/')}
     <main>
       <h1>ホーム</h1>
+      ${(() => {
+        const left = daysLeft();
+        if (left === null) return '';
+        const when = `${EXAM.date} ${EXAM.start}${EXAM.venue ? ' ' + EXAM.venue : ''}`;
+        return `<p class="exam">${left > 0 ? `試験まであと${left}日` : (left === 0 ? '今日が試験日' : '試験日を過ぎています')}<span>${esc(when)}</span></p>`;
+      })()}
       <p class="lead">全${QUESTIONS.length}問のうち${seen}問に解答。通算正答率${overall === null ? '—' : overall + '%'}。直近で間違えたまま${wrong}問。</p>
       <p class="actions">
         <a class="btn" href="${playHash({ area: '', find: '', mode: 'new' })}">未出題を解く</a>

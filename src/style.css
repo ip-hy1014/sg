@@ -265,3 +265,5 @@ td.bad { color: var(--accent); font-weight: 700; }
   .totop { bottom: calc(18px + env(safe-area-inset-bottom)); }
 }
 .terms .full { margin: 0 0 4px; font-size: 13px; color: var(--muted); }
+.exam { font-weight: 700; margin: 0 0 10px; }
+.exam span { display: block; font-size: 13px; font-weight: 400; color: var(--muted); }
