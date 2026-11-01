@@ -267,3 +267,6 @@ td.bad { color: var(--accent); font-weight: 700; }
 .terms .full { margin: 0 0 4px; font-size: 13px; color: var(--muted); }
 .exam { font-weight: 700; margin: 0 0 10px; }
 .exam span { display: block; font-size: 13px; font-weight: 400; color: var(--muted); }
+.guide .svgwrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.guide figure { margin: 14px 0; }
+.guide figcaption { font-size: 13px; color: var(--muted); margin-top: 6px; }
