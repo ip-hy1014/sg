@@ -6,10 +6,11 @@ function loadState() {
     if (raw) {
       const parsed = JSON.parse(raw);
       parsed.results ||= {};
+      parsed.b ||= {};
       return parsed;
     }
   } catch (_) {}
-  return { results: {} };
+  return { results: {}, b: {} };
 }
 
 const state = loadState();
@@ -136,6 +137,7 @@ function header(view) {
   const tabs = [
     ['/', 'ホーム'],
     ['/play', '問題'],
+    ['/b', '科目B'],
     ['/guide', '論点'],
     ['/terms', '用語'],
     ['/weak', '弱点']
@@ -282,6 +284,89 @@ function playPage() {
     </main>`;
 }
 
+function bList() {
+  return (typeof KAMOKUB !== 'undefined' && KAMOKUB) || [];
+}
+
+function bResult(id) {
+  return (state.b || {})[id] || null;
+}
+
+function bRecord(id, picked, ok) {
+  state.b ||= {};
+  state.b[id] = { picked, ok, at: Date.now() };
+  save();
+}
+
+function bIndexPage() {
+  const list = bList();
+  if (!list.length) {
+    return `${header('/b')}<main><p class="empty">科目Bの問題が読み込めませんでした。</p></main>`;
+  }
+  const done = list.filter(x => bResult(x.id)).length;
+  const okN = list.filter(x => (bResult(x.id) || {}).ok).length;
+  const rows = list.map(x => {
+    const r = bResult(x.id);
+    const mark = !r ? '—' : (r.ok ? '正解' : '不正解');
+    return `<li class="bcase ${r ? (r.ok ? 'ok' : 'ng') : ''}">
+      <a href="#/b?q=${encodeURIComponent(x.id)}">
+        <span class="bno">${esc(x.year)} ${esc(x.no)}</span>
+        <span class="btitle">${esc(x.title)}</span>
+        <span class="btags">${(x.tags || []).map(t => esc(t)).join(' · ')}</span>
+      </a>
+      <span class="bmark">${mark}</span>
+    </li>`;
+  }).join('');
+  return `${header('/b')}
+    <main>
+      <h1>科目B</h1>
+      <p class="lead">長文の事例を読んで判断する問題です。本番は12問で配点の2割を占めます。全${list.length}件のうち${done}件に解答、正解${okN}件。</p>
+      <ul class="blist">${rows}</ul>
+      <p class="note">公開されている科目Bは全部で24問です。サンプル問題12問と、令和5年から令和8年の公開問題が各3問あります。</p>
+    </main>`;
+}
+
+function bDetailPage(id) {
+  const x = bList().find(v => v.id === id);
+  if (!x) return `${header('/b')}<main><p class="empty">見つかりませんでした。<a href="#/b">一覧に戻る</a></p></main>`;
+  const r = bResult(id);
+  const head = x.choiceHead || [];
+  const rows = x.choices.map(c => {
+    const label = c[0];
+    const cells = c.slice(1).map(v => `<td>${esc(v)}</td>`).join('');
+    let cls = '';
+    if (r) {
+      if (label === x.answer) cls = 'right';
+      else if (label === r.picked) cls = 'wrong';
+    }
+    return `<tr class="${cls}"><td class="bchoice">${r ? esc(label) : `<button data-pick="${esc(label)}">${esc(label)}</button>`}</td>${cells}</tr>`;
+  }).join('');
+
+  return `${header('/b')}
+    <main class="bdetail">
+      <p class="bcrumb"><a href="#/b">科目B一覧</a></p>
+      <h1>${esc(x.year)} ${esc(x.no)}</h1>
+      <p class="btitle2">${esc(x.title)}</p>
+      <div class="bbody">${x.body}</div>
+      <div class="bsetumon"><h3>設問</h3><p>${x.setumon}</p>
+        ${(x.items || []).length ? `<ul class="bitems">${x.items.map(i => `<li>${esc(i)}</li>`).join('')}</ul>` : ''}
+      </div>
+      <h3>解答群</h3>
+      <div class="tablewrap"><table class="bchoices">
+        <thead><tr><th></th>${head.map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div>
+      ${r ? `
+        <div class="result ${r.ok ? 'ok' : 'ng'}">
+          <p class="verdict">${r.ok ? '正解' : '不正解'}　あなたの解答 ${esc(r.picked)}　正解 ${esc(x.answer)}</p>
+        </div>
+        <h3>解説</h3>
+        <div class="bexplain">${x.explain}</div>
+        <p class="actions"><button class="btn" data-breset="${esc(id)}">もう一度解く</button><a class="btn" href="#/b">一覧に戻る</a></p>
+      ` : `<p class="note">記号を押すと正解と解説が出ます。</p>`}
+    </main>`;
+}
+
 function guidePage() {
   const html = window.SG_GUIDE || '';
   const inner = html
@@ -388,7 +473,8 @@ function mount() {
   const path = route();
   const app = document.getElementById('app');
   const page =
-      path === '/play' ? playPage()
+      path === '/b' ? (params().get('q') ? bDetailPage(params().get('q')) : bIndexPage())
+    : path === '/play' ? playPage()
     : path === '/guide' ? guidePage()
     : path === '/terms' ? termsPage()
     : path === '/weak' ? weakPage()
@@ -484,6 +570,24 @@ function bind(path) {
     if (clearBtn) clearBtn.addEventListener('click', () => { tinput.value = ''; apply(); tinput.focus(); });
     if (tinput.value) apply();
   }
+
+  app.querySelectorAll('[data-pick]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = params().get('q');
+      const x = bList().find(v => v.id === id);
+      if (!x) return;
+      const picked = btn.dataset.pick;
+      bRecord(id, picked, picked === x.answer);
+      mount();
+    });
+  });
+
+  const bre = app.querySelector('[data-breset]');
+  if (bre) bre.addEventListener('click', () => {
+    const id = bre.dataset.breset;
+    if (state.b) { delete state.b[id]; save(); }
+    mount();
+  });
 
   const reset = app.querySelector('[data-reset]');
   if (reset) reset.addEventListener('click', () => {

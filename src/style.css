@@ -270,3 +270,42 @@ td.bad { color: var(--accent); font-weight: 700; }
 .guide .svgwrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .guide figure { margin: 14px 0; }
 .guide figcaption { font-size: 13px; color: var(--muted); margin-top: 6px; }
+
+/* 科目B */
+.blist { list-style: none; margin: 0 0 16px; padding: 0; }
+.bcase { display: flex; align-items: center; gap: 10px; border: 1px solid var(--line); padding: 10px 12px; margin: 0 0 8px; }
+.bcase a { flex: 1 1 auto; min-width: 0; text-decoration: none; color: var(--ink); }
+.bcase .bno { display: block; font-size: 12px; color: var(--muted); }
+.bcase .btitle { display: block; font-weight: 700; margin: 2px 0; }
+.bcase .btags { display: block; font-size: 12px; color: var(--muted); }
+.bcase .bmark { flex: 0 0 auto; font-size: 13px; }
+.bcase.ok .bmark { font-weight: 700; }
+.bcase.ng .bmark { color: var(--accent); font-weight: 700; }
+
+.bcrumb { font-size: 13px; margin: 0 0 8px; }
+.btitle2 { font-weight: 700; margin: 0 0 14px; }
+.bbody { border-left: 3px solid var(--line); padding-left: 12px; margin: 0 0 18px; }
+.bbody h4 { font-size: 15px; margin: 16px 0 6px; }
+.bbody p { margin: 0 0 10px; }
+.bbody .blank, .bbody b.blank { display: inline-block; min-width: 2.4em; text-align: center; border-bottom: 2px solid var(--accent); font-weight: 700; }
+.figbox { border: 1px solid var(--line); padding: 10px 12px; margin: 0 0 12px; }
+.figtitle { font-weight: 700; font-size: 14px; margin: 0 0 6px; }
+.figbox ul { margin: 0 0 8px; padding-left: 1.3em; }
+.fignote { font-size: 14px; margin: 0; }
+
+.bsetumon { border: 1px solid var(--line); padding: 12px; margin: 0 0 16px; }
+.bsetumon h3 { margin: 0 0 8px; }
+.bitems { margin: 10px 0 0; padding-left: 1.3em; }
+.bitems li { margin: 0 0 8px; }
+
+.bchoices td, .bchoices th { font-size: 14px; }
+.bchoices .bchoice { text-align: center; width: 3.2em; }
+.bchoices .bchoice button { width: 100%; padding: 6px 0; border: 1px solid var(--line); background: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+.bchoices tr.right td { font-weight: 700; }
+.bchoices tr.right .bchoice::before { content: "正 "; }
+.bchoices tr.wrong td { color: var(--accent); }
+.bchoices tr.wrong .bchoice::before { content: "誤 "; }
+
+.bexplain h4 { font-size: 15px; margin: 18px 0 6px; padding-left: 9px; border-left: 3px solid var(--ink); }
+.bexplain blockquote { margin: 0 0 10px; padding: 8px 12px; background: var(--soft); border-left: 3px solid var(--muted); font-size: 15px; }
+.bexplain p { margin: 0 0 10px; }
